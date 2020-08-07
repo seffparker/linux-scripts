@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Bash script to delete old browser cache files for all users.
+# Author: Seff Parker
+# Version: 20200807
+
+DAYS_TO_KEEP=7
+
+echo -n "Purging Google Chrome caches: "
+COUNT=$(find /home*/*/.cache/google-chrome/*/*Cache/ -maxdepth 2 -type f -atime +${DAYS_TO_KEEP} -delete -print | wc -l)
+echo "$COUNT cache files removed"
+
+echo -n "Purging Chromium caches: "
+COUNT=$(find /home*/*/.cache/chromium/*/*Cache/ -maxdepth 2 -type f -atime +${DAYS_TO_KEEP} -delete -print | wc -l)
+echo "$COUNT cache files removed"
+
+echo -n "Purging Firefox caches: "
+COUNT=$(find /home*/*/.cache/mozilla/firefox/*/cache2/entries/ -maxdepth 1 -type f -atime +${DAYS_TO_KEEP} -delete -print | wc -l)
+echo "$COUNT cache files removed"
