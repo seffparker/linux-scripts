@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# BASH script to free up Kernel Page Cache from RAM
+#
+# Author: Seff Parker
+# Version: 20200807
+
+if [[ $UID -ne 0 ]]
+	then
+	echo "Re-invoking as ROOT user..."
+	exec sudo $0 $*
+fi
+
+TargetFreePerc="15"
+FORCED=false
+CRON=false
+
+MemTotal=$(awk '/^MemTotal/ {print $2}' /proc/meminfo)
+MemFree=$(awk '/^MemFree/ {print $2}' /proc/meminfo)
+let MemFreePerc="$MemFree * 100 / $MemTotal"
+
+[[ "$1" == "-f" ]] && FORCED=true
+[[ "$1" == "--cron" ]] && CRON=true
+
+
+if [[ $MemFreePerc -lt $TargetFreePerc ]] || $FORCED
+	then
+	echo "Current RAM: $MemFree KB (${MemFreePerc}%) free of $MemTotal KB"
+	echo "Target free is $TargetFreePerc%. Proceeding to optimize"
+	echo -n "Saving buffers "
+		sync
+		echo "[DONE]"
+	echo -n "Dropping caches "
+		echo 1 > /proc/sys/vm/drop_caches
+		echo "[DONE]"
+	echo -n "Compacting memory "
+		echo 1 > /proc/sys/vm/compact_memory
+		echo "[DONE]"
+	MemTotal=$(awk '/^MemTotal/ {print $2}' /proc/meminfo)
+	MemFree=$(awk '/^MemFree/ {print $2}' /proc/meminfo)
+	let MemFreePerc="$MemFree * 100 / $MemTotal"
+	echo "New RAM: $MemFree KB (${MemFreePerc}%) free of $MemTotal KB"
+elif ! $CRON
+	then
+	echo "Current RAM: $MemFree KB (${MemFreePerc}%) free of $MemTotal KB"
+	echo "Target free is $TargetFreePerc%, aborting! (Use -f to force)"
+fi
