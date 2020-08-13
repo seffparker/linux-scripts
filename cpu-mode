@@ -5,7 +5,11 @@
 # Author: Seff Parker
 # Version: 20190813
 
-source run-as-root
+if [[ $UID -ne 0 ]]
+	then
+	echo "Re-invoking as ROOT user..."
+	exec sudo $0 $*
+fi
 
 set_cpu_gov_freq () {
 	for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq
