@@ -3,13 +3,9 @@
 # BASH script to set or show CPU governer and frequencies
 #
 # Author: Seff Parker
-# Version: 20190808
+# Version: 20190813
 
-if [[ $UID -ne 0 ]]
-	then
-	echo "Re-invoking as ROOT user..."
-	exec sudo $0 $*
-fi
+source run-as-root
 
 set_cpu_gov_freq () {
 	for CPU_PATH in /sys/devices/system/cpu/cpu*/cpufreq
@@ -22,6 +18,7 @@ set_cpu_gov_freq () {
 			echo "${GOVERNOR}" > $CPU_PATH/scaling_governor
 			echo $MIN_FREQ > $CPU_PATH/scaling_min_freq &> /dev/null || echo $MAX_FREQ > $CPU_PATH/scaling_max_freq
 			echo $MAX_FREQ > $CPU_PATH/scaling_max_freq &> /dev/null || echo $MIN_FREQ > $CPU_PATH/scaling_min_freq 
+			echo $BOOST > /sys/devices/system/cpu/cpufreq/boost
 			echo " --> $(cat $CPU_PATH/scaling_governor) ($(($(cat $CPU_PATH/cpuinfo_cur_freq) / 1000)) MHz)"
 		else
 			echo
@@ -37,16 +34,19 @@ case $1 in
 		GOVERNOR="performance"
 		MAX_FREQ=$HW_MAX_FREQ
 		MIN_FREQ=$HW_MAX_FREQ
+		BOOST=1
 		;;
 	min* | low | powersave)
 		GOVERNOR="powersave"
 		MAX_FREQ=$HW_MIN_FREQ
 		MIN_FREQ=$HW_MIN_FREQ
+		BOOST=0
 		;;
 	bal* | def* | ondemand)
 		GOVERNOR="ondemand"
 		MAX_FREQ=$HW_MAX_FREQ
 		MIN_FREQ=$HW_MIN_FREQ
+		BOOST=0
 		;;
 	"")
 		# show current mode
